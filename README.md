@@ -1,5 +1,8 @@
 # 八字命理 Bazi Mingli
 
+![Bazi Mingli Banner](assets/banner.png)
+
+
 [繁體中文](README.md) | [English](README_EN.md)
 
 八字命理（四柱推命 / Bazi / Four Pillars of Destiny）是中國傳統命理學的核心體系。本專案提供專業的八字命理技能，適用於 Claude、ChatGPT、Gemini、DeepSeek 等 AI/LLM。
