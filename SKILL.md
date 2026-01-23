@@ -1,6 +1,6 @@
 ---
 name: bazi-mingli
-description: 八字命理 (Bazi / Four Pillars of Destiny) divination skill. Use when users request birth chart analysis, fortune telling based on birth date/time, or Chinese astrology. Triggers on: 八字, 四柱, 命盤, 排盤, 算命, 命理, 生辰八字, 天干地支, 五行, 流年, 大運, bazi, four pillars, Chinese astrology, birth chart.
+description: "八字命理 (Bazi / Four Pillars of Destiny) divination skill. Use when users request birth chart analysis, fortune telling based on birth date/time, or Chinese astrology. Triggers on: 八字, 四柱, 命盤, 排盤, 算命, 命理, 生辰八字, 天干地支, 五行, 流年, 大運, bazi, four pillars, Chinese astrology, birth chart."
 ---
 
 # 八字命理占卜技能 (Bazi Mingli Divination Skill)
