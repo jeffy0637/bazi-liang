@@ -1,0 +1,36 @@
+# Rule R0001 - 示範規則
+# Schema 參考: docs/SCHEMAS.md
+
+id: R0001
+name: 日主甲木生於寅月得令
+category: 格局
+status: active
+
+conditions:
+  - type: 天干
+    value: 日主甲木
+  - type: 地支
+    value: 月支寅木
+
+conclusion: 日主得月令之氣，身強之象
+
+description: |
+  甲木日主生於寅月（立春後至驚蟄前），
+  寅為甲木之祿地，木氣當旺，
+  日主得令，通常以身強論。
+
+source:
+  book: 子平真詮
+  page: 卷一
+  author: 沈孝瞻
+
+confidence: high
+
+notes: 需配合其他柱位判斷實際強弱
+
+related_rules:
+  - R0002
+  - R0003
+
+created_at: 2026-01-26
+updated_at: 2026-01-26

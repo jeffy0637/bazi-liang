@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git clone:*)",
+      "Bash(gh repo view:*)",
+      "Bash(git init:*)",
+      "Bash(git remote add:*)",
+      "Bash(git fetch:*)",
+      "Bash(git checkout:*)",
+      "Bash(powershell -Command \"conda run -n py314 python ''.claude/skill/bazi-mingli/scripts/bazi_calc.py'' 1995 2 18 17 男\")",
+      "Bash(powershell -Command:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(git config:*)",
+      "Bash(gh auth status:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(git push:*)",
+      "Bash(ls:*)",
+      "Bash(git pull:*)"
+    ]
+  }
+}
