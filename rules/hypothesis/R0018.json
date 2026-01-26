@@ -1,0 +1,21 @@
+{
+    "id": "R0018",
+    "name": "地支三会_亥子丑会水",
+    "type": "地支三会",
+    "conditions": {
+        "feature": "branch_directional_combination",
+        "branches": [
+            "亥",
+            "子",
+            "丑"
+        ],
+        "direction": "北方"
+    },
+    "result": "三会水方",
+    "interpretation": "地支亥子丑三会水，气会一方（北方）",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.13"
+    },
+    "notes": "三会是气会一方"
+}

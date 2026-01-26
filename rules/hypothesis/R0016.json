@@ -1,0 +1,20 @@
+{
+    "id": "R0016",
+    "name": "地支三合_寅午戌合火",
+    "type": "地支三合",
+    "conditions": {
+        "feature": "branch_triple_combination",
+        "branches": [
+            "寅",
+            "午",
+            "戌"
+        ]
+    },
+    "result": "三合火局",
+    "interpretation": "地支寅午戌三合火局",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.13"
+    },
+    "notes": "三合是子午卯酉之等三角"
+}

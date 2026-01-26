@@ -1,0 +1,19 @@
+{
+    "id": "R0022",
+    "name": "地支自刑_午午自刑",
+    "type": "地支自刑",
+    "conditions": {
+        "feature": "branch_self_punishment",
+        "branches": [
+            "午",
+            "午"
+        ]
+    },
+    "result": "自刑",
+    "interpretation": "地支见两个午，为自刑",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.14"
+    },
+    "notes": "七刑之一，四自刑：午酉辰亥"
+}

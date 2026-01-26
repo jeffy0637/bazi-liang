@@ -1,0 +1,16 @@
+{
+    "id": "R0025",
+    "name": "拱夹刑冲_与运岁构成刑冲",
+    "type": "拱夹禁忌",
+    "conditions": {
+        "feature": "arch_clamp_interaction",
+        "requirement": "拱夹出之字与大运流年构成刑冲"
+    },
+    "result": "引发预期外之波动",
+    "interpretation": "拱夹的地支可与大运流年地支构成刑冲合会，虽不明显但实有其性质",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.156"
+    },
+    "notes": "拱吉或拱凶都属于意料不及之涵意"
+}

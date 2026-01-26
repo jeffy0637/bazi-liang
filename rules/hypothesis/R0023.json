@@ -1,0 +1,16 @@
+{
+    "id": "R0023",
+    "name": "拱三合_二干同拱三合中字",
+    "type": "拱",
+    "conditions": {
+        "feature": "arch_triple_combination",
+        "requirement": "二柱天干相同，地支拱三合中之一字"
+    },
+    "result": "视为三合全",
+    "interpretation": "如甲寅、甲戌拱午，可视为寅午戌三合全，可用于取格",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.154"
+    },
+    "notes": "拱出来的三合，可与明见的三合一样用于取格"
+}

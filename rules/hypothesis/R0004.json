@@ -1,0 +1,19 @@
+{
+    "id": "R0004",
+    "name": "天干五合_丁壬合木",
+    "type": "天干五合",
+    "conditions": {
+        "feature": "stem_combination",
+        "stems": [
+            "丁",
+            "壬"
+        ]
+    },
+    "result": "合化木",
+    "interpretation": "天干丁与壬相见，合化为木",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.10"
+    },
+    "notes": "天干五合基础规则"
+}

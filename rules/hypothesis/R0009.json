@@ -1,0 +1,19 @@
+{
+    "id": "R0009",
+    "name": "天干相冲_癸丁冲",
+    "type": "天干相冲",
+    "conditions": {
+        "feature": "stem_clash",
+        "stems": [
+            "癸",
+            "丁"
+        ]
+    },
+    "result": "冲",
+    "interpretation": "天干癸与丁相见为冲",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.11"
+    },
+    "notes": "数位冲克以七为绝位"
+}

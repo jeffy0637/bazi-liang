@@ -1,0 +1,21 @@
+{
+    "id": "R0020",
+    "name": "地支三刑_寅巳申相刑",
+    "type": "地支三刑",
+    "conditions": {
+        "feature": "branch_triple_punishment",
+        "branches": [
+            "寅",
+            "巳",
+            "申"
+        ],
+        "type": "无恩之刑"
+    },
+    "result": "三刑",
+    "interpretation": "申刑寅、寅刑巳、巳刑申，构成三刑",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.14"
+    },
+    "notes": "七刑之一"
+}

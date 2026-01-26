@@ -1,0 +1,19 @@
+{
+    "id": "R0030",
+    "name": "格局忌刑冲",
+    "type": "格局禁忌",
+    "conditions": {
+        "feature": "format_taboo",
+        "format": "任何格局",
+        "taboo": "格局地支遭刑冲"
+    },
+    "result": "格局受损",
+    "interpretation": "任何格局俱皆忌见刑冲，唯借三合六合可解轻其刑冲之力",
+    "resolution": "借三合或六合解刑冲",
+    "exception": "杂气财官格不忌刑冲",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.165"
+    },
+    "notes": "禄命法中之常法，正官格五忌之一"
+}

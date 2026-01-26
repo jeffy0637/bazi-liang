@@ -1,0 +1,17 @@
+{
+    "id": "R0027",
+    "name": "拱驿马_意料外调迁",
+    "type": "拱神煞",
+    "conditions": {
+        "feature": "arch_clamp_shensha",
+        "shensha": "驿马",
+        "requirement": "拱夹出之字为驿马"
+    },
+    "result": "意料不到之调迁",
+    "interpretation": "拱驿马者，有意料不到的调迁，忽然而遇",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.156"
+    },
+    "notes": "拱吉属于意料不及之涵意"
+}

@@ -1,0 +1,16 @@
+{
+    "id": "R0024",
+    "name": "夹_二干同夹隔位",
+    "type": "夹",
+    "conditions": {
+        "feature": "clamp",
+        "requirement": "二柱天干相同，地支相隔一字"
+    },
+    "result": "夹出一字",
+    "interpretation": "如甲子、甲戌夹亥字，产生不明显但实际存在的性质",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.154"
+    },
+    "notes": "拱隔位即是夹，可拱出三会地支"
+}

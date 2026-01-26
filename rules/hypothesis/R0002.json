@@ -1,0 +1,19 @@
+{
+    "id": "R0002",
+    "name": "天干五合_乙庚合金",
+    "type": "天干五合",
+    "conditions": {
+        "feature": "stem_combination",
+        "stems": [
+            "乙",
+            "庚"
+        ]
+    },
+    "result": "合化金",
+    "interpretation": "天干乙与庚相见，合化为金",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.10"
+    },
+    "notes": "天干五合基础规则"
+}

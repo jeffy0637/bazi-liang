@@ -1,0 +1,19 @@
+{
+    "id": "R0010",
+    "name": "地支六合_子丑合土",
+    "type": "地支六合",
+    "conditions": {
+        "feature": "branch_combination",
+        "branches": [
+            "子",
+            "丑"
+        ]
+    },
+    "result": "合化土",
+    "interpretation": "地支子与丑相见，合化为土",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.12"
+    },
+    "notes": "六合是圆图之平行线"
+}

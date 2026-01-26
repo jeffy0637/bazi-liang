@@ -1,0 +1,20 @@
+{
+    "id": "R0015",
+    "name": "地支三合_亥卯未合木",
+    "type": "地支三合",
+    "conditions": {
+        "feature": "branch_triple_combination",
+        "branches": [
+            "亥",
+            "卯",
+            "未"
+        ]
+    },
+    "result": "三合木局",
+    "interpretation": "地支亥卯未三合木局",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.13"
+    },
+    "notes": "三合是子午卯酉之等三角"
+}

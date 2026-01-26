@@ -1,0 +1,19 @@
+{
+    "id": "R0001",
+    "name": "天干五合_甲己合土",
+    "type": "天干五合",
+    "conditions": {
+        "feature": "stem_combination",
+        "stems": [
+            "甲",
+            "己"
+        ]
+    },
+    "result": "合化土",
+    "interpretation": "天干甲与己相见，合化为土",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.10"
+    },
+    "notes": "天干五合基础规则，过五位则合"
+}

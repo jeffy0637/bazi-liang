@@ -1,0 +1,21 @@
+{
+    "id": "R0021",
+    "name": "地支三刑_丑未戌相刑",
+    "type": "地支三刑",
+    "conditions": {
+        "feature": "branch_triple_punishment",
+        "branches": [
+            "丑",
+            "未",
+            "戌"
+        ],
+        "type": "无恩之刑"
+    },
+    "result": "三刑",
+    "interpretation": "戌刑未、未刑丑、丑刑戌，构成三刑",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.14"
+    },
+    "notes": "七刑之一"
+}

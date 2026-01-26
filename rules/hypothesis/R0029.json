@@ -1,0 +1,18 @@
+{
+    "id": "R0029",
+    "name": "正官格忌官杀混杂",
+    "type": "格局禁忌",
+    "conditions": {
+        "feature": "format_taboo",
+        "format": "正官格",
+        "taboo": "七杀出干或邻位"
+    },
+    "result": "官杀混杂",
+    "interpretation": "正官格忌见七杀浮在天干，恐制日主过甚",
+    "resolution": "需地支同时俱备日主临官帝旺位，或合杀留官",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.161"
+    },
+    "notes": "正官格五忌之一"
+}

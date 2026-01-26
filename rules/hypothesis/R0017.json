@@ -1,0 +1,20 @@
+{
+    "id": "R0017",
+    "name": "地支三合_巳酉丑合金",
+    "type": "地支三合",
+    "conditions": {
+        "feature": "branch_triple_combination",
+        "branches": [
+            "巳",
+            "酉",
+            "丑"
+        ]
+    },
+    "result": "三合金局",
+    "interpretation": "地支巳酉丑三合金局",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.13"
+    },
+    "notes": "三合是子午卯酉之等三角"
+}

@@ -1,0 +1,19 @@
+{
+    "id": "R0012",
+    "name": "地支六冲_子午冲",
+    "type": "地支六冲",
+    "conditions": {
+        "feature": "branch_clash",
+        "branches": [
+            "子",
+            "午"
+        ]
+    },
+    "result": "冲",
+    "interpretation": "地支子与午相见为冲，圆图一百八十度直线",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.12"
+    },
+    "notes": "六冲是圆图一百八十度之直线"
+}

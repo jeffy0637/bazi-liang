@@ -1,0 +1,19 @@
+{
+    "id": "R0013",
+    "name": "地支六冲_卯酉冲",
+    "type": "地支六冲",
+    "conditions": {
+        "feature": "branch_clash",
+        "branches": [
+            "卯",
+            "酉"
+        ]
+    },
+    "result": "冲",
+    "interpretation": "地支卯与酉相见为冲",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.12"
+    },
+    "notes": "六冲是圆图一百八十度之直线"
+}

@@ -1,0 +1,18 @@
+{
+    "id": "R0028",
+    "name": "正官格忌伤官",
+    "type": "格局禁忌",
+    "conditions": {
+        "feature": "format_taboo",
+        "format": "正官格",
+        "taboo": "伤官出干或邻位"
+    },
+    "result": "伤官混官",
+    "interpretation": "正官格忌见伤官出干或邻位，因正官为顺用格局不可反克",
+    "resolution": "需财通关(伤官生财财生官)或印制伤(印克伤官)",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.161"
+    },
+    "notes": "正官格五忌之一，顺用格局不能用反克方式"
+}

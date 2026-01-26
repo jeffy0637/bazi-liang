@@ -1,0 +1,21 @@
+{
+    "id": "R0019",
+    "name": "地支三会_寅卯辰会木",
+    "type": "地支三会",
+    "conditions": {
+        "feature": "branch_directional_combination",
+        "branches": [
+            "寅",
+            "卯",
+            "辰"
+        ],
+        "direction": "东方"
+    },
+    "result": "三会木方",
+    "interpretation": "地支寅卯辰三会木，气会一方（东方）",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.13"
+    },
+    "notes": "三会是气会一方"
+}

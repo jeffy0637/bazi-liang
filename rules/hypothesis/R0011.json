@@ -1,0 +1,19 @@
+{
+    "id": "R0011",
+    "name": "地支六合_寅亥合木",
+    "type": "地支六合",
+    "conditions": {
+        "feature": "branch_combination",
+        "branches": [
+            "寅",
+            "亥"
+        ]
+    },
+    "result": "合化木",
+    "interpretation": "地支寅与亥相见，合化为木",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.12"
+    },
+    "notes": "六合是圆图之平行线"
+}

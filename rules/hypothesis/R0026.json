@@ -1,0 +1,17 @@
+{
+    "id": "R0026",
+    "name": "拱贵人_意料外协助",
+    "type": "拱神煞",
+    "conditions": {
+        "feature": "arch_clamp_shensha",
+        "shensha": "天乙贵人",
+        "requirement": "拱夹出之字为天乙贵人"
+    },
+    "result": "意料不到之人协助",
+    "interpretation": "拱贵人者，有意料不到之人相协助，隐而不显忽然而遇",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.156"
+    },
+    "notes": "拱吉属于意料不及之涵意"
+}

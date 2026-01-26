@@ -1,0 +1,19 @@
+{
+    "id": "R0005",
+    "name": "天干五合_戊癸合火",
+    "type": "天干五合",
+    "conditions": {
+        "feature": "stem_combination",
+        "stems": [
+            "戊",
+            "癸"
+        ]
+    },
+    "result": "合化火",
+    "interpretation": "天干戊与癸相见，合化为火",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.10"
+    },
+    "notes": "天干五合基础规则"
+}

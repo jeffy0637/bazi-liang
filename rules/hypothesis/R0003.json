@@ -1,0 +1,19 @@
+{
+    "id": "R0003",
+    "name": "天干五合_丙辛合水",
+    "type": "天干五合",
+    "conditions": {
+        "feature": "stem_combination",
+        "stems": [
+            "丙",
+            "辛"
+        ]
+    },
+    "result": "合化水",
+    "interpretation": "天干丙与辛相见，合化为水",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.10"
+    },
+    "notes": "天干五合基础规则"
+}

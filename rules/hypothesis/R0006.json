@@ -1,0 +1,19 @@
+{
+    "id": "R0006",
+    "name": "天干相冲_甲庚冲",
+    "type": "天干相冲",
+    "conditions": {
+        "feature": "stem_clash",
+        "stems": [
+            "甲",
+            "庚"
+        ]
+    },
+    "result": "冲",
+    "interpretation": "天干甲与庚相见为冲，逢七则绝",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.11"
+    },
+    "notes": "数位冲克以七为绝位"
+}

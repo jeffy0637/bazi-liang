@@ -1,0 +1,20 @@
+{
+    "id": "R0014",
+    "name": "地支三合_申子辰合水",
+    "type": "地支三合",
+    "conditions": {
+        "feature": "branch_triple_combination",
+        "branches": [
+            "申",
+            "子",
+            "辰"
+        ]
+    },
+    "result": "三合水局",
+    "interpretation": "地支申子辰三合水局，子午卯酉之等三角",
+    "status": "active",
+    "evidence": {
+        "books": "子平基础概要, p.13"
+    },
+    "notes": "三合是子午卯酉之等三角"
+}
