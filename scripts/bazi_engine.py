@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import argparse
 from dataclasses import dataclass, field, asdict
-from typing import List, Dict, Optional, Tuple, Set
+from typing import List, Dict, Optional, Tuple, Set, Union
 from enum import Enum
 
 # ============================================================
@@ -184,6 +184,89 @@ TIANGAN_KE = {
 }
 
 # ============================================================
+# 十神定義
+# ============================================================
+
+# 十神名稱（順序：比肩、劫財、食神、傷官、偏財、正財、七殺、正官、偏印、正印）
+SHISHEN_NAMES = ["比肩", "劫財", "食神", "傷官", "偏財", "正財", "七殺", "正官", "偏印", "正印"]
+
+# 十神速查表：SHISHEN_TABLE[日主][他干] = 十神
+# 根據 references/shishen.md 十神速查表
+SHISHEN_TABLE = {
+    "甲": {"甲": "比肩", "乙": "劫財", "丙": "食神", "丁": "傷官", "戊": "偏財", "己": "正財", "庚": "七殺", "辛": "正官", "壬": "偏印", "癸": "正印"},
+    "乙": {"乙": "比肩", "甲": "劫財", "丁": "食神", "丙": "傷官", "己": "偏財", "戊": "正財", "辛": "七殺", "庚": "正官", "癸": "偏印", "壬": "正印"},
+    "丙": {"丙": "比肩", "丁": "劫財", "戊": "食神", "己": "傷官", "庚": "偏財", "辛": "正財", "壬": "七殺", "癸": "正官", "甲": "偏印", "乙": "正印"},
+    "丁": {"丁": "比肩", "丙": "劫財", "己": "食神", "戊": "傷官", "辛": "偏財", "庚": "正財", "癸": "七殺", "壬": "正官", "乙": "偏印", "甲": "正印"},
+    "戊": {"戊": "比肩", "己": "劫財", "庚": "食神", "辛": "傷官", "壬": "偏財", "癸": "正財", "甲": "七殺", "乙": "正官", "丙": "偏印", "丁": "正印"},
+    "己": {"己": "比肩", "戊": "劫財", "辛": "食神", "庚": "傷官", "癸": "偏財", "壬": "正財", "乙": "七殺", "甲": "正官", "丁": "偏印", "丙": "正印"},
+    "庚": {"庚": "比肩", "辛": "劫財", "壬": "食神", "癸": "傷官", "甲": "偏財", "乙": "正財", "丙": "七殺", "丁": "正官", "戊": "偏印", "己": "正印"},
+    "辛": {"辛": "比肩", "庚": "劫財", "癸": "食神", "壬": "傷官", "乙": "偏財", "甲": "正財", "丁": "七殺", "丙": "正官", "己": "偏印", "戊": "正印"},
+    "壬": {"壬": "比肩", "癸": "劫財", "甲": "食神", "乙": "傷官", "丙": "偏財", "丁": "正財", "戊": "七殺", "己": "正官", "庚": "偏印", "辛": "正印"},
+    "癸": {"癸": "比肩", "壬": "劫財", "乙": "食神", "甲": "傷官", "丁": "偏財", "丙": "正財", "己": "七殺", "戊": "正官", "辛": "偏印", "庚": "正印"},
+}
+
+# ============================================================
+# 旬空（空亡）定義
+# ============================================================
+
+# 六十甲子表
+JIAZI_60 = [
+    "甲子", "乙丑", "丙寅", "丁卯", "戊辰", "己巳", "庚午", "辛未", "壬申", "癸酉",
+    "甲戌", "乙亥", "丙子", "丁丑", "戊寅", "己卯", "庚辰", "辛巳", "壬午", "癸未",
+    "甲申", "乙酉", "丙戌", "丁亥", "戊子", "己丑", "庚寅", "辛卯", "壬辰", "癸巳",
+    "甲午", "乙未", "丙申", "丁酉", "戊戌", "己亥", "庚子", "辛丑", "壬寅", "癸卯",
+    "甲辰", "乙巳", "丙午", "丁未", "戊申", "己酉", "庚戌", "辛亥", "壬子", "癸丑",
+    "甲寅", "乙卯", "丙辰", "丁巳", "戊午", "己未", "庚申", "辛酉", "壬戌", "癸亥",
+]
+
+# 旬空表：以旬首（甲X）對應空亡的兩支
+# 甲子旬空戌亥, 甲戌旬空申酉, 甲申旬空午未, 甲午旬空辰巳, 甲辰旬空寅卯, 甲寅旬空子丑
+XUNKONG_TABLE = {
+    "甲子": ("戌", "亥"),
+    "甲戌": ("申", "酉"),
+    "甲申": ("午", "未"),
+    "甲午": ("辰", "巳"),
+    "甲辰": ("寅", "卯"),
+    "甲寅": ("子", "丑"),
+}
+
+# 旬首對照表：從任意干支找到所屬旬首
+def get_xun_shou(ganzhi: str) -> str:
+    """從干支找到所屬旬首（甲X）"""
+    if ganzhi not in JIAZI_60:
+        raise ValueError(f"無效干支: {ganzhi}")
+    idx = JIAZI_60.index(ganzhi)
+    xun_idx = (idx // 10) * 10  # 每10個一旬
+    return JIAZI_60[xun_idx]
+
+# ============================================================
+# 量度分級（梁派）
+# ============================================================
+
+# 梁派量度分級：禁用百分比，只用四級
+LIANGDU_LEVELS = ["最重", "重", "中", "輕"]
+
+# 刑沖合會的量度（根據梁派定義）
+RELATION_LIANGDU = {
+    # 三合/三會成局最重
+    "三合": "最重",
+    "三會": "最重",
+    # 六沖、相刑次重
+    "六沖": "重",
+    "刑": "重",
+    # 六合、半三合中等
+    "六合": "中",
+    "半三合": "中",
+    # 害、破較輕
+    "害": "輕",
+    "破": "輕",
+    # 天干關係
+    "天干合": "中",
+    "天干沖": "中",
+    "自刑": "輕",
+}
+
+# ============================================================
 # 拱/夾/暗拱 定義
 # ============================================================
 
@@ -313,6 +396,68 @@ class GongJiaAnGong:
             "result_wuxing": self.result_wuxing,
         }
 
+
+@dataclass
+class ShiShenItem:
+    """十神項目"""
+    position: str       # "年", "月", "日", "時"
+    layer: str          # "天干", "地支藏干"
+    char: str           # 具體字（甲乙丙...）
+    shishen: str        # 十神名稱
+    weight: float = 1.0 # 權重（藏干用，本氣1.0/中氣0.5/餘氣0.3）
+    role: Optional[str] = None  # "本氣", "中氣", "餘氣"（僅藏干）
+
+    def to_dict(self) -> dict:
+        d = {
+            "position": self.position,
+            "layer": self.layer,
+            "char": self.char,
+            "shishen": self.shishen,
+            "weight": self.weight,
+        }
+        if self.role:
+            d["role"] = self.role
+        return d
+
+
+@dataclass
+class XunKongResult:
+    """旬空計算結果"""
+    day_pillar: str         # 日柱干支
+    xun_shou: str           # 所屬旬首
+    kong_zhi: Tuple[str, str]  # 空亡的兩支
+    kong_positions: List[str]  # 哪些柱位落空
+    kong_shishen: List[str]    # 哪些十神落空（需配合十神計算）
+
+    def to_dict(self) -> dict:
+        return {
+            "day_pillar": self.day_pillar,
+            "xun_shou": self.xun_shou,
+            "kong_zhi": list(self.kong_zhi),
+            "kong_positions": self.kong_positions,
+            "kong_shishen": self.kong_shishen,
+        }
+
+
+@dataclass
+class YinYangBalance:
+    """陰陽統計結果"""
+    gan_yang: int           # 天干陽的數量
+    gan_yin: int            # 天干陰的數量
+    zhi_yang: int           # 地支陽的數量
+    zhi_yin: int            # 地支陰的數量
+    total_yang: int         # 總陽
+    total_yin: int          # 總陰
+    pattern: str            # "全陽", "全陰", "陽多", "陰多", "平衡"
+
+    def to_dict(self) -> dict:
+        return {
+            "天干": {"陽": self.gan_yang, "陰": self.gan_yin},
+            "地支": {"陽": self.zhi_yang, "陰": self.zhi_yin},
+            "總計": {"陽": self.total_yang, "陰": self.total_yin},
+            "pattern": self.pattern,
+        }
+
 # ============================================================
 # 主引擎類
 # ============================================================
@@ -342,6 +487,9 @@ class BaziEngine:
         self._five_elements_without_hidden: Optional[Dict] = None
         self._relations: Optional[List[Relation]] = None
         self._gong_jia: Optional[List[GongJiaAnGong]] = None
+        self._shishen: Optional[List[ShiShenItem]] = None
+        self._xunkong: Optional[XunKongResult] = None
+        self._yinyang: Optional[YinYangBalance] = None
 
     @classmethod
     def from_ganzhi(cls, year_gz: str, month_gz: str, day_gz: str, hour_gz: str) -> "BaziEngine":
@@ -493,6 +641,237 @@ class BaziEngine:
             self._five_elements_with_hidden = result
         else:
             self._five_elements_without_hidden = result
+
+        return result
+
+    # ========================================
+    # 十神計算
+    # ========================================
+
+    def compute_shishen(self) -> List[ShiShenItem]:
+        """
+        計算十神分布
+
+        以日主為基準，計算所有天干和藏干的十神。
+        日主自己記為"日主"而非"比肩"。
+
+        Returns:
+            List[ShiShenItem]: 所有十神項目列表
+        """
+        if self._shishen is not None:
+            return self._shishen
+
+        result = []
+        day_master = self.day_master
+        pos_names = self.POSITION_NAMES
+
+        # 1. 計算天干十神（年月時，日主自己不算）
+        for idx, pillar in enumerate(self._pillars):
+            position = pos_names[idx]
+            gan = pillar.gan
+
+            if idx == 2:  # 日柱天干就是日主
+                shishen = "日主"
+            else:
+                shishen = SHISHEN_TABLE[day_master][gan]
+
+            result.append(ShiShenItem(
+                position=position,
+                layer="天干",
+                char=gan,
+                shishen=shishen,
+                weight=1.0,
+            ))
+
+        # 2. 計算藏干十神（所有地支的藏干）
+        role_names = ["本氣", "中氣", "餘氣"]
+        for idx, pillar in enumerate(self._pillars):
+            position = pos_names[idx]
+            stems = pillar.hidden_stems
+            for i, stem in enumerate(stems):
+                shishen = SHISHEN_TABLE[day_master][stem]
+                result.append(ShiShenItem(
+                    position=position,
+                    layer="地支藏干",
+                    char=stem,
+                    shishen=shishen,
+                    weight=CANGGAN_WEIGHT[i] if i < len(CANGGAN_WEIGHT) else 0.3,
+                    role=role_names[i] if i < len(role_names) else "餘氣",
+                ))
+
+        self._shishen = result
+        return result
+
+    def get_shishen_summary(self) -> Dict:
+        """
+        獲取十神統計摘要
+
+        Returns:
+            {
+                "by_position": {"年": [...], "月": [...], ...},
+                "by_shishen": {"比肩": [...], "劫財": [...], ...},
+                "counts": {"比肩": x, ...},
+                "weighted_counts": {"比肩": x.xx, ...}  # 含藏干權重
+            }
+        """
+        items = self.compute_shishen()
+
+        by_position = {pos: [] for pos in self.POSITION_NAMES}
+        by_shishen: Dict[str, List[ShiShenItem]] = {}
+        counts: Dict[str, int] = {}
+        weighted: Dict[str, float] = {}
+
+        for item in items:
+            # 按位置分組
+            by_position[item.position].append(item.to_dict())
+
+            # 按十神分組
+            ss = item.shishen
+            if ss not in by_shishen:
+                by_shishen[ss] = []
+            by_shishen[ss].append(item.to_dict())
+
+            # 統計數量
+            if ss != "日主":
+                counts[ss] = counts.get(ss, 0) + 1
+                weighted[ss] = weighted.get(ss, 0.0) + item.weight
+
+        return {
+            "by_position": by_position,
+            "by_shishen": {k: v for k, v in by_shishen.items()},
+            "counts": counts,
+            "weighted_counts": {k: round(v, 2) for k, v in weighted.items()},
+        }
+
+    # ========================================
+    # 旬空計算
+    # ========================================
+
+    def compute_xunkong(self) -> XunKongResult:
+        """
+        計算旬空（空亡）
+
+        以日柱干支推算所屬旬首，確定空亡的兩支。
+        然後檢查哪些柱位的地支落空，以及對應的十神落空。
+
+        梁派：旬空用於"落空下修"，影響五行力量評估。
+
+        Returns:
+            XunKongResult: 旬空計算結果
+        """
+        if self._xunkong is not None:
+            return self._xunkong
+
+        day_gz = self.day.ganzhi
+        xun_shou = get_xun_shou(day_gz)
+        kong_zhi = XUNKONG_TABLE[xun_shou]
+
+        # 檢查哪些柱位落空
+        kong_positions = []
+        kong_shishen = []
+        pos_names = self.POSITION_NAMES
+
+        for idx, pillar in enumerate(self._pillars):
+            if pillar.zhi in kong_zhi:
+                kong_positions.append(pos_names[idx])
+                # 落空柱的藏干十神也標記
+                for stem in pillar.hidden_stems:
+                    ss = SHISHEN_TABLE[self.day_master][stem]
+                    if ss not in kong_shishen:
+                        kong_shishen.append(ss)
+
+        result = XunKongResult(
+            day_pillar=day_gz,
+            xun_shou=xun_shou,
+            kong_zhi=kong_zhi,
+            kong_positions=kong_positions,
+            kong_shishen=kong_shishen,
+        )
+
+        self._xunkong = result
+        return result
+
+    # ========================================
+    # 陰陽統計
+    # ========================================
+
+    def compute_yinyang_balance(self) -> YinYangBalance:
+        """
+        計算陰陽分布
+
+        統計天干和地支的陰陽數量，判斷偏枯類型。
+        梁派十項第②項：陰陽有無偏枯。
+
+        Returns:
+            YinYangBalance: 陰陽統計結果
+        """
+        if self._yinyang is not None:
+            return self._yinyang
+
+        gan_yang = gan_yin = zhi_yang = zhi_yin = 0
+
+        # 天干陰陽
+        for gan in self.all_gan:
+            if TIANGAN_YINYANG[gan] == "陽":
+                gan_yang += 1
+            else:
+                gan_yin += 1
+
+        # 地支陰陽
+        for zhi in self.all_zhi:
+            if DIZHI_YINYANG[zhi] == "陽":
+                zhi_yang += 1
+            else:
+                zhi_yin += 1
+
+        total_yang = gan_yang + zhi_yang
+        total_yin = gan_yin + zhi_yin
+
+        # 判斷偏枯類型
+        if total_yin == 0:
+            pattern = "全陽"
+        elif total_yang == 0:
+            pattern = "全陰"
+        elif total_yang >= total_yin + 4:  # 陽比陰多4個以上
+            pattern = "陽多"
+        elif total_yin >= total_yang + 4:
+            pattern = "陰多"
+        else:
+            pattern = "平衡"
+
+        result = YinYangBalance(
+            gan_yang=gan_yang,
+            gan_yin=gan_yin,
+            zhi_yang=zhi_yang,
+            zhi_yin=zhi_yin,
+            total_yang=total_yang,
+            total_yin=total_yin,
+            pattern=pattern,
+        )
+
+        self._yinyang = result
+        return result
+
+    # ========================================
+    # 量度分級
+    # ========================================
+
+    def compute_relations_with_liangdu(self) -> List[Dict]:
+        """
+        計算刑沖合會並附加量度分級
+
+        梁派禁用百分比，採用四級：最重/重/中/輕。
+
+        Returns:
+            List[Dict]: 帶有量度的關係列表
+        """
+        relations = self.compute_relations()
+        result = []
+
+        for r in relations:
+            d = r.to_dict()
+            d["liangdu"] = RELATION_LIANGDU.get(r.type, "中")
+            result.append(d)
 
         return result
 
@@ -704,7 +1083,7 @@ class BaziEngine:
 
     def to_json(self) -> Dict:
         """
-        輸出固定格式的 JSON，分為 step1/step2/step3
+        輸出固定格式的 JSON，分為 step1/step2/step3（向後兼容）
         """
         hidden = self.compute_hidden_stems()
 
@@ -729,6 +1108,50 @@ class BaziEngine:
                 "relations": [r.to_dict() for r in self.compute_relations()],
                 "gong_jia_an_gong": [g.to_dict() for g in self.compute_gong_jia_an_gong()],
             },
+        }
+
+    def to_full_json(self) -> Dict:
+        """
+        輸出完整的梁派分析 JSON，包含所有計算結果
+
+        對齊梁派十項主流程 Stage 0 的原局特征表。
+        包含：四柱、藏干、十神、旬空、五行、陰陽、刑沖合會（含量度）、拱夾暗拱
+        """
+        hidden = self.compute_hidden_stems()
+        shishen = self.compute_shishen()
+        xunkong = self.compute_xunkong()
+        yinyang = self.compute_yinyang_balance()
+
+        return {
+            "stage0": {
+                "四柱": {
+                    "年柱": self.year.to_dict(),
+                    "月柱": self.month.to_dict(),
+                    "日柱": self.day.to_dict(),
+                    "時柱": self.hour.to_dict(),
+                },
+                "日主": self.day_master,
+                "藏干": {
+                    "年支": [h.to_dict() for h in hidden if h.position == "年"],
+                    "月支": [h.to_dict() for h in hidden if h.position == "月"],
+                    "日支": [h.to_dict() for h in hidden if h.position == "日"],
+                    "時支": [h.to_dict() for h in hidden if h.position == "時"],
+                },
+                "十神": {
+                    "items": [s.to_dict() for s in shishen],
+                    "summary": self.get_shishen_summary(),
+                },
+                "旬空": xunkong.to_dict(),
+            },
+            "stage1": {
+                "①五行": self.compute_five_elements(include_hidden=True),
+                "②陰陽": yinyang.to_dict(),
+                "③刑沖合會": {
+                    "relations": self.compute_relations_with_liangdu(),
+                    "gong_jia_an_gong": [g.to_dict() for g in self.compute_gong_jia_an_gong()],
+                },
+            },
+            # 後續十項（④-⑩）待格局引擎和用神引擎實現
         }
 
     def to_json_string(self, indent: int = 2) -> str:
@@ -767,6 +1190,8 @@ def main():
     # 輸出選項
     parser.add_argument("--step", type=int, choices=[1, 2, 3],
                         help="只輸出指定步驟 (1=四柱藏干, 2=五行, 3=關係)")
+    parser.add_argument("--full", action="store_true",
+                        help="輸出完整梁派分析（含十神、旬空、陰陽）")
     parser.add_argument("--compact", action="store_true", help="緊湊輸出 (無縮排)")
 
     args = parser.parse_args()
@@ -781,9 +1206,12 @@ def main():
         return
 
     # 輸出
-    result = engine.to_json()
+    if args.full:
+        result = engine.to_full_json()
+    else:
+        result = engine.to_json()
 
-    if args.step:
+    if args.step and not args.full:
         result = result[f"step{args.step}"]
 
     indent = None if args.compact else 2

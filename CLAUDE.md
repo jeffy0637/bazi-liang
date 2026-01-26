@@ -5,9 +5,10 @@
 This is **Bazi-Liang**, a Chinese astrology (Bazi / Four Pillars of Destiny) AI system based on the **Liang Xiangrun** methodology. The project emphasizes systematic, verifiable, and traceable fortune-telling processes.
 
 ### Liang School Characteristics
-- **Process-first**: Step1 (Five Elements check) -> Step2 (Punishment/Clash/Combination) -> Step3 (Arch/Clamp/Hidden Arch), executed in strict order
+- **Process-first**: Stage 0 (Chart Setup) → Stage 1 (Ten-Step Process ①-⑩) → Stage 2 (Contradiction Resolution)
 - **Verifiable Rules**: Every conclusion traces back to a Rule ID, not just case examples
 - **Uncertainty Annotation**: Build argument chains step by step, marking confidence levels explicitly
+- **No Percentages**: Use 4-level grading (最重/重/中/輕) instead of percentages
 
 ---
 
@@ -40,12 +41,18 @@ bazi-liang/
 ├── ETHICS.md                 # Ethics guidelines for fortune telling
 ├── README.md                 # Project overview
 ├── scripts/
-│   ├── bazi_engine.py        # Core computation engine (Step 0-3)
+│   ├── bazi_engine.py        # Core computation engine (十神/旬空/陰陽/刑沖合會)
+│   ├── geju_engine.py        # 格局判斷引擎 (月令主格/取格四法/順逆用/破格)
+│   ├── yongshen_engine.py    # 用神引擎 (六標籤制/調候/格局用神/喜忌)
 │   ├── bazi_calc.py          # Calendar/pillar calculations
 │   ├── mine_rules.py         # Rule extraction from texts
 │   └── extract_rules_source.py
 ├── tests/
-│   └── test_bazi_engine.py   # Engine unit tests
+│   ├── test_bazi_engine.py   # Engine unit tests (30 tests)
+│   ├── test_shishen.py       # 十神計算測試 (9 tests)
+│   ├── test_xunkong.py       # 旬空計算測試 (12 tests)
+│   ├── test_geju.py          # 格局判斷測試 (17 tests)
+│   └── test_yongshen.py      # 用神系統測試 (14 tests)
 ├── eval/
 │   ├── run_eval.py           # Evaluation runner
 │   └── metrics.py            # Evaluation metrics
@@ -59,11 +66,15 @@ bazi-liang/
 │       ├── dev.txt           # Development set case IDs
 │       └── test_locked.txt   # Test set (LOCKED - DO NOT use for tuning)
 ├── prompts/
-│   ├── driver.md             # Main LLM driver prompt
-│   ├── step0.md              # Step 0 prompt template
-│   ├── step1.md              # Step 1 prompt template
-│   ├── step2.md              # Step 2 prompt template
-│   └── step3.md              # Step 3 prompt template
+│   ├── driver.md             # Main orchestrator (3-stage flow)
+│   ├── stage0.md             # Stage 0: 原局特徵表
+│   ├── stage1.md             # Stage 1: 十項主流程 ①-⑩
+│   ├── stage2.md             # Stage 2: 矛盾清單與覆蓋規則
+│   ├── female_protocol.md    # 女命協議
+│   ├── step0.md              # Legacy Step 0 prompt
+│   ├── step1.md              # Legacy Step 1 prompt
+│   ├── step2.md              # Legacy Step 2 prompt
+│   └── step3.md              # Legacy Step 3 prompt
 ├── references/               # Reference documents for Bazi knowledge
 │   ├── liang-system.md       # Liang system workflow spec
 │   ├── liang-gongjia.md      # Liang arch/clamp rules
@@ -94,11 +105,24 @@ C:\Users\Jay\miniforge3\Scripts\conda.exe run -n py314 python eval/run_eval.py
 
 ### Use Bazi Engine (CLI)
 ```bash
-# From ganzhi input
+# Basic output (legacy format)
 C:\Users\Jay\miniforge3\Scripts\conda.exe run -n py314 python -m scripts.bazi_engine --year 甲子 --month 乙丑 --day 丙寅 --hour 丁卯
 
+# Full Liang-style output (十神/旬空/陰陽/量度)
+C:\Users\Jay\miniforge3\Scripts\conda.exe run -n py314 python -m scripts.bazi_engine --year 甲子 --month 乙丑 --day 丙寅 --hour 丁卯 --full
+
 # From datetime input
-C:\Users\Jay\miniforge3\Scripts\conda.exe run -n py314 python -m scripts.bazi_engine --datetime 1990 8 15 14
+C:\Users\Jay\miniforge3\Scripts\conda.exe run -n py314 python -m scripts.bazi_engine --datetime 1990 8 15 14 --full
+```
+
+### Use Geju Engine (格局)
+```bash
+C:\Users\Jay\miniforge3\Scripts\conda.exe run -n py314 python -m scripts.geju_engine --year 己丑 --month 己巳 --day 甲子 --hour 辛未
+```
+
+### Use YongShen Engine (用神)
+```bash
+C:\Users\Jay\miniforge3\Scripts\conda.exe run -n py314 python -m scripts.yongshen_engine --year 己丑 --month 己巳 --day 甲子 --hour 辛未
 ```
 
 ### Calculate Bazi (Legacy)
@@ -122,13 +146,54 @@ C:\Users\Jay\miniforge3\Scripts\conda.exe run -n py314 python scripts/bazi_calc.
 
 These rules are mandatory for the `/bazi` skill and must not be skipped:
 
-1. **Follow Liang Order**: Step1 (Five Elements check with hidden stems) -> Step2 (Punishment/Clash/Combination) -> Step3 (Arch/Clamp/Hidden Arch). Never skip steps.
+1. **Follow Liang 3-Stage Flow**:
+   - Stage 0: 原局特徵表 (四柱/藏干/十神/旬空/月令主格)
+   - Stage 1: 十項主流程 ①-⑩ (嚴格順序執行)
+   - Stage 2: 矛盾清單與覆蓋規則
 
-2. **Step3 Output Format**: `findings.arch_clamp` must be a **string array** with standard format:
-   - Correct: `["丑卯夹寅", "申辰拱子"]`
-   - FORBIDDEN: Writing "punishment" (如子卯刑) as "arch/clamp"
+2. **Ten-Step Process (Stage 1)**:
+   - ① 五行是否不全（含落空下修）
+   - ② 陰陽有無偏枯
+   - ③ 刑沖合會形態（含量度分級）
+   - ④ 神煞與日主生剋
+   - ⑤ 六親概括（含旺絕+落空）
+   - ⑥ 年時關聯與牽制
+   - ⑦ 調候用神喜忌（兩層）
+   - ⑧ 格局順逆與用格喜忌
+   - ⑨ 日主強弱扶抑
+   - ⑩ 備註/覆蓋條款
 
-3. **Conflict Warning**: If a hidden arch/clamp conflicts with the original chart (e.g., clash), mark "梁派警示" in notes.
+3. **No Percentages**: Use 4-level grading only (最重/重/中/輕)
+
+4. **Conflict Warning**: If a hidden arch/clamp conflicts with the original chart (e.g., clash), mark "梁派警示" in notes.
+
+5. **Female Chart Protocol**: For female charts, refer to `prompts/female_protocol.md`
+
+---
+
+## Core Engines
+
+### bazi_engine.py
+Core computation engine providing:
+- `compute_shishen()`: 十神計算
+- `compute_xunkong()`: 旬空/空亡計算
+- `compute_yinyang_balance()`: 陰陽統計
+- `compute_relations_with_liangdu()`: 刑沖合會（含量度）
+- `to_full_json()`: 完整梁派輸出格式
+
+### geju_engine.py
+格局判斷引擎：
+- `get_yueling_zhuge()`: 月令主格
+- `check_quge_sifa()`: 取格四法
+- `judge_shunni()`: 順用/逆用判定
+- `check_poge()`: 破格檢測
+
+### yongshen_engine.py
+用神系統（六標籤制）：
+- `get_tiaohuo_yongshen()`: 調候用神
+- `get_geju_yongshen()`: 格局用神
+- `get_tongguan_yongshen()`: 通關用神
+- `compute_xiji()`: 喜忌計算
 
 ---
 
@@ -176,7 +241,7 @@ Types:
 - `test`: Adding/updating tests
 - `chore`: Maintenance tasks
 
-Example: `feat: add half-sanhe detection to bazi_engine`
+Example: `feat: add geju_engine with 格局判斷 system`
 
 ---
 
@@ -184,7 +249,10 @@ Example: `feat: add half-sanhe detection to bazi_engine`
 
 | Document | When to Use |
 |----------|-------------|
-| `references/liang-system.md` | Understanding the Liang workflow (Step 0-7) |
+| `prompts/driver.md` | Understanding the 3-stage Liang workflow |
+| `prompts/stage1.md` | Ten-step process details |
+| `prompts/female_protocol.md` | Female chart interpretation |
+| `references/liang-system.md` | Original Liang workflow spec |
 | `references/liang-gongjia.md` | Arch/Clamp rule definitions |
 | `references/tiangan-dizhi.md` | Heavenly Stems & Earthly Branches basics |
 | `references/wuxing-shengke.md` | Five Elements relationships |

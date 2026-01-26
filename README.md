@@ -6,8 +6,10 @@
 
 ## 梁派特色
 
-- **流程優先**：Step1 五行全不全 → Step2 刑沖合會 → Step3 拱/夾/暗拱，依序執行不跳步
+- **三階段流程**：Stage 0 原局特徵表 → Stage 1 十項主流程 → Stage 2 矛盾清單
+- **十項主流程**：①五行 → ②陰陽 → ③刑沖合會 → ④神煞 → ⑤六親 → ⑥年時 → ⑦調候 → ⑧格局 → ⑨扶抑 → ⑩備註
 - **可驗證規則**：每個結論可回溯至規則 ID，而非僅憑案例
+- **禁用百分比**：量度採用四級制（最重/重/中/輕）
 - **不確定性標註**：逐步建立論證鏈，明確標示信心程度
 
 ---
@@ -17,29 +19,27 @@
 ```
 bazi-liang/
 ├── CLAUDE.md                     # Claude Code 工作指南
-├── AGENT.md                      # Claude Code 工作指南 (別名)
-├── GEMINI.md                     # Gemini AI 工作指南
 ├── SKILL.md                      # 八字技能定義 (/bazi 指令)
 ├── ETHICS.md                     # 倫理準則
 ├── README.md                     # 本文件
 │
-├── .agent/                       # Claude Code Skills 配置
-├── .codex/                       # OpenAI Codex Skills 配置
-├── .claude/                      # Claude 專案設定
-│
-├── scripts/                      # 核心腳本
-│   ├── bazi_engine.py            # 八字硬計算引擎 (Step 0-3)
+├── scripts/                      # 核心引擎
+│   ├── bazi_engine.py            # 八字硬計算引擎 (十神/旬空/陰陽/刑沖合會)
+│   ├── geju_engine.py            # 格局判斷引擎 (月令主格/取格四法/順逆用/破格)
+│   ├── yongshen_engine.py        # 用神引擎 (六標籤制/調候/格局用神)
 │   ├── bazi_calc.py              # 排盤計算工具
-│   ├── mine_rules.py             # 規則萃取腳本
-│   └── extract_rules_source.py   # 來源萃取
+│   └── ...
 │
-├── tests/                        # 測試套件
-│   └── test_bazi_engine.py       # 引擎單元測試
+├── tests/                        # 測試套件 (86 tests)
+│   ├── test_bazi_engine.py       # 引擎單元測試 (30 tests)
+│   ├── test_shishen.py           # 十神計算測試 (9 tests)
+│   ├── test_xunkong.py           # 旬空計算測試 (12 tests)
+│   ├── test_geju.py              # 格局判斷測試 (17 tests)
+│   └── test_yongshen.py          # 用神系統測試 (14 tests)
 │
 ├── eval/                         # 評估框架
 │   ├── run_eval.py               # 評估執行器
-│   ├── metrics.py                # 評估指標
-│   └── reports/                  # 評估報告輸出
+│   └── metrics.py                # 評估指標
 │
 ├── rules/                        # 規則系統
 │   ├── active/                   # 已驗證規則 (YAML)
@@ -53,68 +53,62 @@ bazi-liang/
 │       └── test_locked.txt       # 測試集 (禁止用於調整)
 │
 ├── prompts/                      # LLM 提示詞
-│   ├── driver.md                 # 主驅動提示
-│   └── step0.md ~ step3.md       # 各步驟提示
+│   ├── driver.md                 # 主驅動提示 (三階段流程)
+│   ├── stage0.md                 # Stage 0: 原局特徵表
+│   ├── stage1.md                 # Stage 1: 十項主流程 ①-⑩
+│   ├── stage2.md                 # Stage 2: 矛盾清單與覆蓋規則
+│   └── female_protocol.md        # 女命協議
 │
 ├── references/                   # 命理知識參考
 │   ├── liang-system.md           # 梁系論命流程規格
-│   ├── liang-gongjia.md          # 梁派拱/夾規則
-│   ├── tiangan-dizhi.md          # 天干地支基礎
-│   ├── wuxing-shengke.md         # 五行生剋詳解
 │   ├── shishen.md                # 十神定義與應用
-│   ├── rizhu-qiangruo.md         # 日主強弱判斷
-│   ├── yongshen.md               # 用神喜忌法則
-│   ├── dayun-liunian.md          # 大運流年推算
-│   ├── geju-fenxi.md             # 格局分析總論
-│   ├── hunyin-ganqing.md         # 婚姻感情專論
-│   ├── shiye-caiyun.md           # 事業財運專論
-│   └── jiankang.md               # 健康疾病專論
+│   └── ...
 │
-├── docs/                         # 技術文檔
-│   ├── SCHEMAS.md                # Rule/Case 資料規格
-│   ├── ARCHITECTURE.md           # 系統架構說明
-│   ├── BASELINE.md               # 基線評估記錄
-│   └── ERROR_DASHBOARD.md        # 錯誤追蹤儀表板
-│
-└── books/                        # 參考書籍 (PDF, 不納入版控)
+└── docs/                         # 技術文檔
+    ├── SCHEMAS.md                # Rule/Case 資料規格
+    └── ARCHITECTURE.md           # 系統架構說明
 ```
 
 ---
 
 ## 核心組件
 
-### 硬計算層 (bazi_engine.py)
+### 硬計算層 (scripts/)
 
-程式碼計算層，保證 LLM 無法編造基礎結構：
-
-| 步驟 | 內容 | 說明 |
-|------|------|------|
-| Step 0 | 排盤校驗 | 四柱、藏干、十神、五行分布 |
-| Step 1 | 五行統計 | 含支藏，標註缺失 |
-| Step 2 | 刑沖合會 | 結構描述，不先下吉凶 |
-| Step 3 | 拱/夾/暗拱 | 檢查危險組合 |
-
-### 軟解讀層 (LLM 負責)
-
-| 步驟 | 內容 | 說明 |
-|------|------|------|
-| Step 4 | 十神定位 | 性格/行為傾向 |
-| Step 5 | 格局與職業 | 能力結構分析 |
-| Step 6 | 調候 | 寒暖燥濕調節 |
-| Step 7 | 流年/大運 | 結構性波動 |
-
----
-
-## 文檔導覽
-
-| 文檔 | 用途 | 適合讀者 |
+| 引擎 | 功能 | 主要方法 |
 |------|------|----------|
-| [CLAUDE.md](CLAUDE.md) | Claude Code 開發指南 | 開發者/AI |
-| [SKILL.md](SKILL.md) | 八字技能定義 | AI/用戶 |
-| [ETHICS.md](ETHICS.md) | 倫理準則 | 所有人 |
-| [docs/SCHEMAS.md](docs/SCHEMAS.md) | 資料規格 | 開發者 |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 系統架構 | 開發者 |
-| [references/liang-system.md](references/liang-system.md) | 梁系流程規格 | 開發者/AI |
+| `bazi_engine.py` | 四柱、藏干、五行、刑沖合會 | `to_full_json()`, `compute_shishen()`, `compute_xunkong()` |
+| `geju_engine.py` | 格局判斷 | `get_yueling_zhuge()`, `judge_shunni()`, `check_poge()` |
+| `yongshen_engine.py` | 用神系統 | `get_tiaohuo_yongshen()`, `compute_xiji()` |
+
+### 三階段流程
+
+```
+Stage 0: 原局特徵表
+├── 四柱排盤
+├── 藏干計算
+├── 十神計算
+├── 旬空計算
+└── 月令主格
+
+Stage 1: 十項主流程
+├── ① 五行是否不全（含落空下修）
+├── ② 陰陽有無偏枯
+├── ③ 刑沖合會形態（含量度分級）
+├── ④ 神煞與日主生剋
+├── ⑤ 六親概括（含旺絕+落空）
+├── ⑥ 年時關聯與牽制
+├── ⑦ 調候用神喜忌（兩層）
+├── ⑧ 格局順逆與用格喜忌
+├── ⑨ 日主強弱扶抑
+└── ⑩ 備註/覆蓋條款
+
+Stage 2: 矛盾清單
+├── 矛盾識別與解決
+├── 覆蓋規則
+├── 主線定調（最多3條）
+└── 待查清單
+```
 
 ---
 
@@ -130,11 +124,17 @@ conda activate py314
 ### 使用引擎
 
 ```bash
-# 從干支輸入
+# 基本輸出
 python -m scripts.bazi_engine --year 甲子 --month 乙丑 --day 丙寅 --hour 丁卯
 
-# 從日期輸入
-python -m scripts.bazi_engine --datetime 1990 8 15 14
+# 完整梁派輸出（含十神、旬空、陰陽、量度）
+python -m scripts.bazi_engine --year 己丑 --month 己巳 --day 甲子 --hour 辛未 --full
+
+# 格局分析
+python -m scripts.geju_engine --year 己丑 --month 己巳 --day 甲子 --hour 辛未
+
+# 用神分析
+python -m scripts.yongshen_engine --year 己丑 --month 己巳 --day 甲子 --hour 辛未
 ```
 
 ### 執行測試
@@ -143,11 +143,52 @@ python -m scripts.bazi_engine --datetime 1990 8 15 14
 pytest tests/ -v
 ```
 
-### 執行評估
-
-```bash
-python eval/run_eval.py
+輸出範例：
 ```
+============================= 86 passed in 0.18s ==============================
+```
+
+### Python 使用範例
+
+```python
+from scripts.bazi_engine import BaziEngine
+from scripts.geju_engine import GejuEngine
+from scripts.yongshen_engine import YongShenEngine
+
+# 建立八字引擎
+bazi = BaziEngine.from_ganzhi("己丑", "己巳", "甲子", "辛未")
+
+# 完整輸出（Stage 0 + Stage 1 基礎）
+result = bazi.to_full_json()
+print(f"日主: {result['stage0']['日主']}")
+print(f"旬空: {result['stage0']['旬空']['kong_zhi']}")
+
+# 格局分析
+geju = GejuEngine(bazi)
+geju_result = geju.to_json()
+print(f"主格: {geju_result['月令主格']['主格']}")
+print(f"順逆: {geju_result['順逆用']['shunni']}")
+
+# 用神分析
+yongshen = YongShenEngine(bazi, geju)
+ys_result = yongshen.to_json()
+print(f"調候用神: {ys_result['用神列表'][0]['wuxing']}")
+print(f"喜: {ys_result['喜忌']['喜']}")
+```
+
+---
+
+## 文檔導覽
+
+| 文檔 | 用途 | 適合讀者 |
+|------|------|----------|
+| [CLAUDE.md](CLAUDE.md) | Claude Code 開發指南 | 開發者/AI |
+| [SKILL.md](SKILL.md) | 八字技能定義 | AI/用戶 |
+| [ETHICS.md](ETHICS.md) | 倫理準則 | 所有人 |
+| [prompts/driver.md](prompts/driver.md) | 三階段流程總控 | 開發者/AI |
+| [prompts/stage1.md](prompts/stage1.md) | 十項主流程詳解 | 開發者/AI |
+| [prompts/female_protocol.md](prompts/female_protocol.md) | 女命協議 | 開發者/AI |
+| [docs/SCHEMAS.md](docs/SCHEMAS.md) | 資料規格 | 開發者 |
 
 ---
 
@@ -159,6 +200,15 @@ python eval/run_eval.py
 
 ---
 
+## 梁派硬規則
+
+1. **嚴格順序**：Stage 0 → Stage 1 (①-⑩) → Stage 2，不可跳步
+2. **禁用百分比**：量度只用「最重/重/中/輕」四級
+3. **每條結論必須有 Rule ID**：無規則支持的結論標記為「待查」
+4. **證據權重**：S級可定主線，A級強支持，B級輔助，C級參考
+
+---
+
 ## 倫理準則
 
 - **中立客觀**：吉凶並陳，不迎合期望
@@ -167,3 +217,15 @@ python eval/run_eval.py
 - **尊重隱私**：未經同意不分析他人命盤
 
 詳見 [ETHICS.md](ETHICS.md)
+
+---
+
+## 更新記錄
+
+### 2026-01-26
+- **新增** `geju_engine.py`：格局判斷引擎（月令主格、取格四法、順逆用、破格檢測）
+- **新增** `yongshen_engine.py`：用神引擎（六標籤制、調候用神、格局用神）
+- **擴展** `bazi_engine.py`：新增十神、旬空、陰陽計算
+- **重構** prompts/：對齊梁派三階段十項主流程
+- **新增** 女命協議 `female_protocol.md`
+- **新增** 56 個測試案例（總計 86 tests）
