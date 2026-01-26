@@ -17,9 +17,15 @@
 ```
 bazi-liang/
 ├── CLAUDE.md                     # Claude Code 工作指南
+├── AGENT.md                      # Claude Code 工作指南 (別名)
+├── GEMINI.md                     # Gemini AI 工作指南
 ├── SKILL.md                      # 八字技能定義 (/bazi 指令)
 ├── ETHICS.md                     # 倫理準則
 ├── README.md                     # 本文件
+│
+├── .agent/                       # Claude Code Skills 配置
+├── .codex/                       # OpenAI Codex Skills 配置
+├── .claude/                      # Claude 專案設定
 │
 ├── scripts/                      # 核心腳本
 │   ├── bazi_engine.py            # 八字硬計算引擎 (Step 0-3)
@@ -48,7 +54,7 @@ bazi-liang/
 │
 ├── prompts/                      # LLM 提示詞
 │   ├── driver.md                 # 主驅動提示
-│   ├── step0.md ~ step3.md       # 各步驟提示
+│   └── step0.md ~ step3.md       # 各步驟提示
 │
 ├── references/                   # 命理知識參考
 │   ├── liang-system.md           # 梁系論命流程規格
@@ -67,9 +73,10 @@ bazi-liang/
 ├── docs/                         # 技術文檔
 │   ├── SCHEMAS.md                # Rule/Case 資料規格
 │   ├── ARCHITECTURE.md           # 系統架構說明
-│   └── ...
+│   ├── BASELINE.md               # 基線評估記錄
+│   └── ERROR_DASHBOARD.md        # 錯誤追蹤儀表板
 │
-└── books/                        # 參考書籍 (PDF)
+└── books/                        # 參考書籍 (PDF, 不納入版控)
 ```
 
 ---
