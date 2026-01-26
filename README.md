@@ -13,7 +13,7 @@
 ## 專案結構
 
 ```
-bazi-mingli-liang/
+bazi-liang/
 ├── SKILL.md                      # 核心技能指南
 ├── ETHICS.md                     # 倫理準則
 ├── README.md                     # 本文件
