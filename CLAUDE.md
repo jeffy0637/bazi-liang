@@ -13,10 +13,16 @@ This is **Bazi-Liang**, a Chinese astrology (Bazi / Four Pillars of Destiny) AI 
 
 ## Python Environment
 
-Always use the `py314` conda environment for executing Python scripts:
+Always use the `py314` conda environment for executing Python scripts.
 
+**Conda path** (miniforge3):
+```
+C:\Users\Jay\miniforge3\Scripts\conda.exe
+```
+
+**Command format**:
 ```bash
-powershell -Command "conda run -n py314 python <script.py>"
+C:\Users\Jay\miniforge3\Scripts\conda.exe run -n py314 python <script.py>
 ```
 
 Environment details:
@@ -78,26 +84,26 @@ bazi-liang/
 
 ### Run Tests
 ```bash
-powershell -Command "conda run -n py314 pytest tests/ -v"
+C:\Users\Jay\miniforge3\Scripts\conda.exe run -n py314 pytest tests/ -v
 ```
 
 ### Run Evaluation
 ```bash
-powershell -Command "conda run -n py314 python eval/run_eval.py"
+C:\Users\Jay\miniforge3\Scripts\conda.exe run -n py314 python eval/run_eval.py
 ```
 
 ### Use Bazi Engine (CLI)
 ```bash
 # From ganzhi input
-powershell -Command "conda run -n py314 python -m scripts.bazi_engine --year 甲子 --month 乙丑 --day 丙寅 --hour 丁卯"
+C:\Users\Jay\miniforge3\Scripts\conda.exe run -n py314 python -m scripts.bazi_engine --year 甲子 --month 乙丑 --day 丙寅 --hour 丁卯
 
 # From datetime input
-powershell -Command "conda run -n py314 python -m scripts.bazi_engine --datetime 1990 8 15 14"
+C:\Users\Jay\miniforge3\Scripts\conda.exe run -n py314 python -m scripts.bazi_engine --datetime 1990 8 15 14
 ```
 
 ### Calculate Bazi (Legacy)
 ```bash
-powershell -Command "conda run -n py314 python scripts/bazi_calc.py 1990 8 15 14 男"
+C:\Users\Jay\miniforge3\Scripts\conda.exe run -n py314 python scripts/bazi_calc.py 1990 8 15 14 男
 ```
 
 ---
