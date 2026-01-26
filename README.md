@@ -57,7 +57,3 @@ bazi-mingli-liang/
 - **尊重隱私**：未經同意不分析他人命盤
 
 詳見 [ETHICS.md](ETHICS.md)
-
-## 授權
-
-CC BY-NC-SA 4.0
