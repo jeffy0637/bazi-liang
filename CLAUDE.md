@@ -51,7 +51,7 @@ bazi-liang/
 │   ├── test_bazi_engine.py   # Engine unit tests (30 tests)
 │   ├── test_shishen.py       # 十神計算測試 (9 tests)
 │   ├── test_xunkong.py       # 旬空計算測試 (12 tests)
-│   ├── test_geju.py          # 格局判斷測試 (17 tests)
+│   ├── test_geju.py          # 格局判斷測試 (26 tests)
 │   └── test_yongshen.py      # 用神系統測試 (14 tests)
 ├── eval/
 │   ├── run_eval.py           # Evaluation runner
@@ -147,7 +147,7 @@ C:\Users\Jay\miniforge3\Scripts\conda.exe run -n py314 python scripts/bazi_calc.
 These rules are mandatory for the `/bazi` skill and must not be skipped:
 
 1. **Follow Liang 3-Stage Flow**:
-   - Stage 0: 原局特徵表 (四柱/藏干/十神/旬空/月令主格)
+   - Stage 0: 原局特徵表 (四柱/藏干/十神/旬空/主格判定)
    - Stage 1: 十項主流程 ①-⑩ (嚴格順序執行)
    - Stage 2: 矛盾清單與覆蓋規則
 
@@ -182,11 +182,15 @@ Core computation engine providing:
 - `to_full_json()`: 完整梁派輸出格式
 
 ### geju_engine.py
-格局判斷引擎：
-- `get_yueling_zhuge()`: 月令主格
-- `check_quge_sifa()`: 取格四法
-- `judge_shunni()`: 順用/逆用判定
-- `check_poge()`: 破格檢測
+格局判斷引擎（梁派取格四步驟）：
+- `determine_main_ge()`: **主格判定**（核心方法）
+  - 第一步：三合三會 + 透干 → 最強（置信度 S）
+  - 第二步：月令藏干透干（本氣 > 中氣 > 餘氣）
+  - 第三步：月令本氣（無透干時）
+  - 第四步：比劫 → 建祿格/羊刃格轉換
+- `get_yueling_data()`: 月令數據
+- `get_poge_data()`: 破格檢測
+- `get_shunni_data()`: 順逆用數據
 
 ### yongshen_engine.py
 用神系統（六標籤制）：

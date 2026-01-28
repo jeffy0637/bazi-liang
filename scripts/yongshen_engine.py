@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 """
-用神引擎 (Yongshen Engine)
+用神引擎 (Yongshen Engine) - 數據版
 
-實現梁派用神系統，六標籤制：
-1. 調候用神：寒暖燥濕調節
-2. 格局用神：護格、助格
-3. 通關用神：化解對峙
-4. 病藥用神：去病得藥
-5. 專旺用神：順勢引泄
-6. 扶抑喜忌：日主強弱調節
+實現梁派用神數據提供系統，只輸出客觀數據，不做判斷。
+判斷邏輯交由 LLM 根據 prompts/ 和 rules/ 執行。
+
+核心原則：Engine = 客觀事實計算器
+
+提供數據：
+- 調候數據：季節、調候參考表
+- 格局用神數據：護格/制化參考
+- 通關數據：五行對峙情況
+- 日主強弱數據：得令得地得勢得氣
+- 五行生剋參考：生剋關係表
 
 梁派禁忌：禁用百分比，只用定性描述。
 """
@@ -20,7 +24,7 @@ from enum import Enum
 
 from .bazi_engine import (
     BaziEngine, TIANGAN, DIZHI, TIANGAN_WUXING, DIZHI_WUXING,
-    SHISHEN_TABLE, TIANGAN_YINYANG, DIZHI_YINYANG
+    SHISHEN_TABLE, TIANGAN_YINYANG, DIZHI_YINYANG, DIZHI_CANGGAN
 )
 from .geju_engine import GejuEngine, GeType, SHUNONG_GE, NIYONG_GE
 
@@ -45,9 +49,9 @@ SEASON_TEMP = {
     "冬": "寒",
 }
 
-# 調候用神表（簡化版：日主 + 季節 → 調候用神）
-# 格式：TIAOHUO_TABLE[日主五行][季節] = (主調候, 輔調候, 理由)
-TIAOHUO_TABLE = {
+# 調候參考表（日主五行 + 季節 → 調候建議）
+# 格式：TIAOHUO_REFERENCE[日主五行][季節] = (主調候五行, 輔調候五行, 理由)
+TIAOHUO_REFERENCE = {
     "木": {
         "春": ("水", "火", "春木需水滋養，火暖之"),
         "夏": ("水", None, "夏木焦枯，急需水潤"),
@@ -80,9 +84,15 @@ TIAOHUO_TABLE = {
     },
 }
 
+# 五行生剋關係
+WUXING_SHENG = {"木": "火", "火": "土", "土": "金", "金": "水", "水": "木"}  # 我生者
+WUXING_KE = {"木": "土", "火": "金", "土": "水", "金": "木", "水": "火"}    # 我剋者
+WUXING_SHENG_WO = {"木": "水", "火": "木", "土": "火", "金": "土", "水": "金"}  # 生我者
+WUXING_KE_WO = {"木": "金", "火": "水", "土": "木", "金": "火", "水": "土"}    # 剋我者
+
 
 # ============================================================
-# 數據結構
+# 用神類型（僅供標識）
 # ============================================================
 
 class YongShenType(Enum):
@@ -95,65 +105,16 @@ class YongShenType(Enum):
     FUYI = "扶抑喜忌"
 
 
-@dataclass
-class YongShenItem:
-    """用神項目"""
-    type: YongShenType
-    wuxing: str                     # 用神五行
-    priority: int                   # 優先級 (1-6)
-    reason: str                     # 取用理由
-    is_primary: bool = True         # 是否主用神
-    auxiliary: Optional[str] = None # 輔助用神五行
-
-    def to_dict(self) -> dict:
-        d = {
-            "type": self.type.value,
-            "wuxing": self.wuxing,
-            "priority": self.priority,
-            "reason": self.reason,
-            "is_primary": self.is_primary,
-        }
-        if self.auxiliary:
-            d["auxiliary"] = self.auxiliary
-        return d
-
-
-@dataclass
-class XiJiResult:
-    """喜忌結果"""
-    xi: List[str]                   # 喜神五行
-    ji: List[str]                   # 忌神五行
-    xian: List[str]                 # 閒神五行
-    chou: Optional[str] = None      # 仇神五行
-    notes: List[str] = field(default_factory=list)
-
-    def to_dict(self) -> dict:
-        return {
-            "喜": self.xi,
-            "忌": self.ji,
-            "閒": self.xian,
-            "仇": self.chou,
-            "notes": self.notes,
-        }
-
-
 # ============================================================
 # 用神引擎
 # ============================================================
 
 class YongShenEngine:
     """
-    用神引擎
+    用神數據引擎
 
-    實現梁派六標籤制用神系統。
-
-    取用神順序：
-    1. 調候（寒暖燥濕優先）
-    2. 格局（護格助格）
-    3. 通關（化解對峙）
-    4. 病藥（去病得藥）
-    5. 專旺（順勢引泄）
-    6. 扶抑（強弱調節）
+    只提供客觀數據，不做任何判斷。
+    LLM 根據數據 + 規則做判斷。
     """
 
     LABELS = [
@@ -169,288 +130,334 @@ class YongShenEngine:
         self.bazi = bazi
         self.geju = geju or GejuEngine(bazi)
 
-        self._yongshen_list: Optional[List[YongShenItem]] = None
-        self._xiji_result: Optional[XiJiResult] = None
-
     # ========================================
-    # 調候用神
+    # 調候數據（不做結論）
     # ========================================
 
-    def get_tiaohuo_yongshen(self) -> YongShenItem:
+    def get_tiaohuo_data(self) -> Dict:
         """
-        獲取調候用神
+        獲取調候相關數據
 
-        梁派兩層調候：
-        - 第一層：日主對月令（基本寒暖燥濕）
-        - 第二層：格局對月令（格神需要的調候）
+        只提供數據，不直接返回用神。
+        LLM 根據以下數據 + 規則判斷調候用神。
 
         Returns:
-            YongShenItem: 調候用神
+            Dict: 調候相關數據
         """
         day_master = self.bazi.day_master
         day_wuxing = TIANGAN_WUXING[day_master]
         yue_zhi = self.bazi.month.zhi
         season = ZHI_SEASON[yue_zhi]
+        season_temp = SEASON_TEMP[season]
 
-        # 第一層：日主調候
-        tiaohuo_info = TIAOHUO_TABLE.get(day_wuxing, {}).get(season)
-
+        # 調候參考表建議
+        tiaohuo_info = TIAOHUO_REFERENCE.get(day_wuxing, {}).get(season)
         if tiaohuo_info:
             primary, auxiliary, reason = tiaohuo_info
-            return YongShenItem(
-                type=YongShenType.TIAOHUO,
-                wuxing=primary,
-                priority=1,
-                reason=f"日主{day_master}（{day_wuxing}）生於{season}月（{yue_zhi}），{reason}",
-                is_primary=True,
-                auxiliary=auxiliary,
-            )
         else:
-            return YongShenItem(
-                type=YongShenType.TIAOHUO,
-                wuxing="待定",
-                priority=1,
-                reason="調候情況需進一步分析",
-                is_primary=True,
-            )
+            primary, auxiliary, reason = None, None, "無調候建議"
 
-    # ========================================
-    # 格局用神
-    # ========================================
-
-    def get_geju_yongshen(self) -> YongShenItem:
-        """
-        獲取格局用神
-
-        順用格：護格、助格
-        逆用格：制化、引泄
-
-        Returns:
-            YongShenItem: 格局用神
-        """
-        shunni = self.geju.judge_shunni()
-        zhuge = self.geju.get_yueling_zhuge()
-        main_ge = zhuge.main_ge
-
-        if shunni["shunni"] == "順用":
-            # 順用格用相神護格
-            yongshen_wuxing = self._get_xiangshen_wuxing(main_ge)
-            reason = f"{main_ge.value}順用，取{yongshen_wuxing}為相神護格"
-        elif shunni["shunni"] == "逆用":
-            # 逆用格需制化
-            yongshen_wuxing = self._get_zhihua_wuxing(main_ge)
-            reason = f"{main_ge.value}逆用，取{yongshen_wuxing}制化"
-        else:
-            yongshen_wuxing = "待定"
-            reason = "格局特殊，需進一步分析"
-
-        return YongShenItem(
-            type=YongShenType.GEJU,
-            wuxing=yongshen_wuxing,
-            priority=2,
-            reason=reason,
-        )
-
-    def _get_xiangshen_wuxing(self, ge_type: GeType) -> str:
-        """獲取相神五行（順用格）"""
-        # 簡化版：根據格局返回相神
-        xiangshen_map = {
-            GeType.ZHENGCAI: "食神五行",  # 財格用食傷生財
-            GeType.PIANCAI: "食神五行",
-            GeType.ZHENGGUAN: "財五行",   # 官格用財生官
-            GeType.ZHENGYIN: "官五行",    # 印格用官生印
-            GeType.SHISHEN: "財五行",     # 食神格用財洩食
-        }
-
-        # 返回對應的五行（這裡簡化處理，實際需要根據日主計算）
-        day_wuxing = TIANGAN_WUXING[self.bazi.day_master]
-        wuxing_cycle = ["木", "火", "土", "金", "水"]
-        idx = wuxing_cycle.index(day_wuxing)
-
-        if ge_type in [GeType.ZHENGCAI, GeType.PIANCAI]:
-            # 財格用食傷（我生者）
-            return wuxing_cycle[(idx + 1) % 5]
-        elif ge_type == GeType.ZHENGGUAN:
-            # 官格用財（我剋者）
-            return wuxing_cycle[(idx + 2) % 5]
-        elif ge_type == GeType.ZHENGYIN:
-            # 印格用官（剋我者）
-            return wuxing_cycle[(idx + 4) % 5]
-        elif ge_type == GeType.SHISHEN:
-            # 食神格用財
-            return wuxing_cycle[(idx + 2) % 5]
-        else:
-            return "待定"
-
-    def _get_zhihua_wuxing(self, ge_type: GeType) -> str:
-        """獲取制化五行（逆用格）"""
-        day_wuxing = TIANGAN_WUXING[self.bazi.day_master]
-        wuxing_cycle = ["木", "火", "土", "金", "水"]
-        idx = wuxing_cycle.index(day_wuxing)
-
-        if ge_type == GeType.QISHA:
-            # 七殺格用食神制殺
-            return wuxing_cycle[(idx + 1) % 5]
-        elif ge_type == GeType.SHANGGUAN:
-            # 傷官格用印制傷
-            return wuxing_cycle[(idx + 3) % 5]
-        elif ge_type == GeType.PIANYIN:
-            # 偏印格用財制梟
-            return wuxing_cycle[(idx + 2) % 5]
-        elif ge_type == GeType.YANGREN:
-            # 羊刃格用官殺制刃
-            return wuxing_cycle[(idx + 4) % 5]
-        else:
-            return "待定"
-
-    # ========================================
-    # 通關用神
-    # ========================================
-
-    def get_tongguan_yongshen(self) -> Optional[YongShenItem]:
-        """
-        獲取通關用神
-
-        當兩行對峙時，取中間五行通關。
-        例如：金木對峙，取水通關。
-
-        Returns:
-            Optional[YongShenItem]: 通關用神（無對峙則返回 None）
-        """
+        # 檢查命局中是否已有調候五行
         five_elements = self.bazi.compute_five_elements(include_hidden=True)
         counts = five_elements["counts"]
 
-        # 檢查對峙情況（兩行都強，且相剋）
+        existing_tiaohuo = {}
+        if primary:
+            existing_tiaohuo[primary] = {
+                "存在": counts.get(primary, 0) > 0,
+                "權重": round(counts.get(primary, 0), 2),
+            }
+        if auxiliary:
+            existing_tiaohuo[auxiliary] = {
+                "存在": counts.get(auxiliary, 0) > 0,
+                "權重": round(counts.get(auxiliary, 0), 2),
+            }
+
+        # 調候五行在命局中的位置
+        tiaohuo_positions = []
+        if primary:
+            for item in self.bazi.compute_shishen():
+                if TIANGAN_WUXING.get(item.char, DIZHI_WUXING.get(item.char)) == primary:
+                    tiaohuo_positions.append({
+                        "字": item.char,
+                        "位置": item.position,
+                        "層級": item.layer,
+                        "十神": item.shishen,
+                    })
+
+        return {
+            "day_master": day_master,
+            "day_wuxing": day_wuxing,
+            "yue_zhi": yue_zhi,
+            "season": season,
+            "season_temp": season_temp,
+            "tiaohuo_reference": {
+                "primary": primary,
+                "auxiliary": auxiliary,
+                "reason": reason,
+            },
+            "existing_tiaohuo": existing_tiaohuo,
+            "tiaohuo_positions": tiaohuo_positions,
+            "wuxing_counts": {k: round(v, 2) for k, v in counts.items()},
+        }
+
+    # ========================================
+    # 格局用神數據（不做結論）
+    # ========================================
+
+    def get_geju_yongshen_data(self) -> Dict:
+        """
+        獲取格局用神相關數據
+
+        只提供數據，不直接返回用神。
+        LLM 根據以下數據 + 規則判斷格局用神。
+
+        Returns:
+            Dict: 格局用神相關數據
+        """
+        day_wuxing = TIANGAN_WUXING[self.bazi.day_master]
+        wuxing_cycle = ["木", "火", "土", "金", "水"]
+        idx = wuxing_cycle.index(day_wuxing)
+
+        # 獲取格局數據
+        shunni_data = self.geju.get_shunni_data()
+        zhuge = self.geju.get_yueling_zhuge()
+        main_ge = zhuge.main_ge
+
+        # 十神五行對照
+        shishen_wuxing = {
+            "比肩": day_wuxing,
+            "劫財": day_wuxing,
+            "食神": wuxing_cycle[(idx + 1) % 5],
+            "傷官": wuxing_cycle[(idx + 1) % 5],
+            "偏財": wuxing_cycle[(idx + 2) % 5],
+            "正財": wuxing_cycle[(idx + 2) % 5],
+            "七殺": wuxing_cycle[(idx + 3) % 5],
+            "正官": wuxing_cycle[(idx + 3) % 5],
+            "偏印": wuxing_cycle[(idx + 4) % 5],
+            "正印": wuxing_cycle[(idx + 4) % 5],
+        }
+
+        # 順用格相神參考
+        xiangshen_reference = {
+            "正財格": {"相神": "食傷", "五行": wuxing_cycle[(idx + 1) % 5], "作用": "食傷生財"},
+            "偏財格": {"相神": "食傷", "五行": wuxing_cycle[(idx + 1) % 5], "作用": "食傷生財"},
+            "正官格": {"相神": "財星", "五行": wuxing_cycle[(idx + 2) % 5], "作用": "財生官"},
+            "正印格": {"相神": "官殺", "五行": wuxing_cycle[(idx + 3) % 5], "作用": "官生印"},
+            "食神格": {"相神": "財星", "五行": wuxing_cycle[(idx + 2) % 5], "作用": "財洩食"},
+        }
+
+        # 逆用格制化參考
+        zhihua_reference = {
+            "七殺格": {"制化": "食神", "五行": wuxing_cycle[(idx + 1) % 5], "作用": "食神制殺"},
+            "傷官格": {"制化": "印星", "五行": wuxing_cycle[(idx + 4) % 5], "作用": "印制傷官"},
+            "偏印格": {"制化": "財星", "五行": wuxing_cycle[(idx + 2) % 5], "作用": "財制梟"},
+            "羊刃格": {"制化": "官殺", "五行": wuxing_cycle[(idx + 3) % 5], "作用": "官殺制刃"},
+        }
+
+        return {
+            "day_wuxing": day_wuxing,
+            "月令主格": main_ge.value,
+            "shunni_data": shunni_data,
+            "shishen_wuxing_map": shishen_wuxing,
+            "xiangshen_reference": xiangshen_reference,
+            "zhihua_reference": zhihua_reference,
+        }
+
+    # ========================================
+    # 通關數據（不做結論）
+    # ========================================
+
+    def get_tongguan_data(self) -> Dict:
+        """
+        獲取通關相關數據
+
+        只提供數據，不直接返回通關用神。
+        LLM 根據以下數據 + 規則判斷是否需要通關。
+
+        Returns:
+            Dict: 通關相關數據
+        """
+        five_elements = self.bazi.compute_five_elements(include_hidden=True)
+        counts = five_elements["counts"]
         wuxing_list = ["木", "火", "土", "金", "水"]
+
+        # 五行剋制關係
         ke_pairs = [
-            ("木", "土"),  # 木剋土
-            ("火", "金"),  # 火剋金
-            ("土", "水"),  # 土剋水
-            ("金", "木"),  # 金剋木
-            ("水", "火"),  # 水剋火
+            ("木", "土", "火"),  # 木剋土，火通關
+            ("火", "金", "土"),  # 火剋金，土通關
+            ("土", "水", "金"),  # 土剋水，金通關
+            ("金", "木", "水"),  # 金剋木，水通關
+            ("水", "火", "木"),  # 水剋火，木通關
         ]
 
-        for ke, bei_ke in ke_pairs:
-            if counts[ke] >= 3 and counts[bei_ke] >= 3:
-                # 找通關五行（被剋者生者）
-                bei_ke_idx = wuxing_list.index(bei_ke)
-                tongguan = wuxing_list[(bei_ke_idx + 1) % 5]
+        # 檢查對峙情況
+        duizhi_data = []
+        for ke, bei_ke, tongguan_wx in ke_pairs:
+            ke_weight = counts.get(ke, 0)
+            bei_ke_weight = counts.get(bei_ke, 0)
+            tongguan_weight = counts.get(tongguan_wx, 0)
+            duizhi_data.append({
+                "剋方": ke,
+                "剋方權重": round(ke_weight, 2),
+                "被剋方": bei_ke,
+                "被剋方權重": round(bei_ke_weight, 2),
+                "通關五行": tongguan_wx,
+                "通關五行權重": round(tongguan_weight, 2),
+            })
 
-                return YongShenItem(
-                    type=YongShenType.TONGGUAN,
-                    wuxing=tongguan,
-                    priority=3,
-                    reason=f"{ke}與{bei_ke}對峙，取{tongguan}通關",
-                )
-
-        return None
+        return {
+            "wuxing_counts": {k: round(v, 2) for k, v in counts.items()},
+            "duizhi_data": duizhi_data,
+            "wuxing_sheng_map": WUXING_SHENG,
+            "wuxing_ke_map": WUXING_KE,
+        }
 
     # ========================================
-    # 綜合分析
+    # 日主強弱數據（不做結論）
     # ========================================
 
-    def compute_all_yongshen(self) -> List[YongShenItem]:
+    def get_rizhu_strength_data(self) -> Dict:
         """
-        計算所有用神
+        獲取日主強弱相關數據
 
-        按優先級返回用神列表。
+        只提供數據，不直接判斷強弱。
+        LLM 根據以下數據 + 規則判斷日主強弱。
 
         Returns:
-            List[YongShenItem]: 用神列表
+            Dict: 日主強弱相關數據
         """
-        if self._yongshen_list is not None:
-            return self._yongshen_list
+        day_master = self.bazi.day_master
+        day_wuxing = TIANGAN_WUXING[day_master]
+        yue_zhi = self.bazi.month.zhi
+        yue_wuxing = DIZHI_WUXING[yue_zhi]
 
-        result = []
+        # 得令判定數據
+        # 月令五行與日主五行的關係
+        sheng_wo_wuxing = WUXING_SHENG_WO[day_wuxing]  # 生我者
+        de_ling_data = {
+            "yue_wuxing": yue_wuxing,
+            "day_wuxing": day_wuxing,
+            "same_wuxing": yue_wuxing == day_wuxing,
+            "sheng_wo_wuxing": sheng_wo_wuxing,
+            "is_sheng": yue_wuxing == sheng_wo_wuxing,
+        }
 
-        # 1. 調候用神
-        result.append(self.get_tiaohuo_yongshen())
+        # 得地判定數據（地支藏干有日主同五行）
+        de_di_list = []
+        for zhi in self.bazi.all_zhi:
+            canggan = DIZHI_CANGGAN[zhi]
+            for i, gan in enumerate(canggan):
+                if TIANGAN_WUXING[gan] == day_wuxing:
+                    role = ["本氣", "中氣", "餘氣"][i] if i < 3 else "餘氣"
+                    de_di_list.append({
+                        "地支": zhi,
+                        "藏干": gan,
+                        "角色": role,
+                    })
 
-        # 2. 格局用神
-        result.append(self.get_geju_yongshen())
+        # 得勢判定數據（天干有比劫印星）
+        de_shi_list = []
+        for item in self.bazi.compute_shishen():
+            if item.layer == "天干" and item.shishen in ["比肩", "劫財", "正印", "偏印"]:
+                de_shi_list.append({
+                    "字": item.char,
+                    "位置": item.position,
+                    "十神": item.shishen,
+                })
 
-        # 3. 通關用神
-        tongguan = self.get_tongguan_yongshen()
-        if tongguan:
-            result.append(tongguan)
+        # 得氣判定數據（整體五行助力統計）
+        shishen_summary = self.bazi.get_shishen_summary()
+        weighted = shishen_summary.get("weighted_counts", {})
+        bijie_weight = weighted.get("比肩", 0) + weighted.get("劫財", 0)
+        yinxing_weight = weighted.get("正印", 0) + weighted.get("偏印", 0)
+        total_support = bijie_weight + yinxing_weight
 
-        # 4-6. 其他用神類型（簡化版，標記為待實現）
-        # 病藥、專旺、扶抑需要更複雜的判斷
+        guansha_weight = weighted.get("正官", 0) + weighted.get("七殺", 0)
+        caixing_weight = weighted.get("正財", 0) + weighted.get("偏財", 0)
+        shishang_weight = weighted.get("食神", 0) + weighted.get("傷官", 0)
+        total_drain = guansha_weight + caixing_weight + shishang_weight
 
-        self._yongshen_list = result
-        return result
+        de_qi_data = {
+            "bijie_weight": round(bijie_weight, 2),
+            "yinxing_weight": round(yinxing_weight, 2),
+            "total_support": round(total_support, 2),
+            "guansha_weight": round(guansha_weight, 2),
+            "caixing_weight": round(caixing_weight, 2),
+            "shishang_weight": round(shishang_weight, 2),
+            "total_drain": round(total_drain, 2),
+        }
 
-    def compute_xiji(self) -> XiJiResult:
+        return {
+            "day_master": day_master,
+            "day_wuxing": day_wuxing,
+            "de_ling_data": de_ling_data,
+            "de_di_list": de_di_list,
+            "de_di_count": len(de_di_list),
+            "de_shi_list": de_shi_list,
+            "de_shi_count": len(de_shi_list),
+            "de_qi_data": de_qi_data,
+            "weighted_counts": {k: round(v, 2) for k, v in weighted.items()},
+        }
+
+    # ========================================
+    # 五行生剋參考
+    # ========================================
+
+    def get_wuxing_relations(self) -> Dict:
         """
-        計算喜忌
-
-        根據用神反推喜忌神。
+        獲取五行生剋關係表
 
         Returns:
-            XiJiResult: 喜忌結果
+            Dict: 五行生剋關係數據
         """
-        if self._xiji_result is not None:
-            return self._xiji_result
+        day_wuxing = TIANGAN_WUXING[self.bazi.day_master]
 
-        yongshen_list = self.compute_all_yongshen()
-        wuxing_list = ["木", "火", "土", "金", "水"]
+        return {
+            "day_wuxing": day_wuxing,
+            "sheng": WUXING_SHENG[day_wuxing],        # 我生者（食傷）
+            "ke": WUXING_KE[day_wuxing],              # 我剋者（財）
+            "sheng_wo": WUXING_SHENG_WO[day_wuxing],  # 生我者（印）
+            "ke_wo": WUXING_KE_WO[day_wuxing],        # 剋我者（官殺）
+            "full_sheng_map": WUXING_SHENG,
+            "full_ke_map": WUXING_KE,
+            "full_sheng_wo_map": WUXING_SHENG_WO,
+            "full_ke_wo_map": WUXING_KE_WO,
+        }
 
-        xi = []
-        ji = []
-        xian = []
-        notes = []
+    # ========================================
+    # 六標籤制說明
+    # ========================================
 
-        # 用神五行及其生者為喜
-        for ys in yongshen_list:
-            if ys.wuxing != "待定" and ys.wuxing not in xi:
-                xi.append(ys.wuxing)
-                # 生用神者也喜
-                idx = wuxing_list.index(ys.wuxing)
-                sheng_wuxing = wuxing_list[(idx + 4) % 5]  # 生我者
-                if sheng_wuxing not in xi:
-                    xi.append(sheng_wuxing)
+    def get_labels_description(self) -> Dict:
+        """
+        獲取六標籤制說明
 
-        # 剋用神者為忌
-        for ys_wuxing in xi:
-            if ys_wuxing == "待定":
-                continue
-            idx = wuxing_list.index(ys_wuxing)
-            ke_wuxing = wuxing_list[(idx + 2) % 5]  # 剋我者
-            if ke_wuxing not in ji and ke_wuxing not in xi:
-                ji.append(ke_wuxing)
-
-        # 其餘為閒
-        for wx in wuxing_list:
-            if wx not in xi and wx not in ji:
-                xian.append(wx)
-
-        result = XiJiResult(
-            xi=xi,
-            ji=ji,
-            xian=xian,
-            notes=notes,
-        )
-
-        self._xiji_result = result
-        return result
+        Returns:
+            Dict: 六標籤制說明
+        """
+        return {
+            "調候": "寒暖燥濕調節，冬夏極端時優先",
+            "格局": "護格助格，根據順逆用決定",
+            "通關": "化解對峙，兩行皆強時使用",
+            "病藥": "去病得藥，有病方需藥",
+            "專旺": "順勢引泄，從格專旺時使用",
+            "扶抑": "強弱調節，日主過旺過弱時使用",
+        }
 
     # ========================================
     # 輸出
     # ========================================
 
     def to_json(self) -> Dict:
-        """輸出用神分析結果"""
+        """輸出用神數據（只有數據，無判斷）"""
         return {
-            "用神列表": [ys.to_dict() for ys in self.compute_all_yongshen()],
-            "喜忌": self.compute_xiji().to_dict(),
-            "六標籤制說明": {
-                "調候": "寒暖燥濕調節，冬夏極端時優先",
-                "格局": "護格助格，根據順逆用決定",
-                "通關": "化解對峙，兩行皆強時使用",
-                "病藥": "去病得藥，有病方需藥",
-                "專旺": "順勢引泄，從格專旺時使用",
-                "扶抑": "強弱調節，日主過旺過弱時使用",
-            },
+            "調候數據": self.get_tiaohuo_data(),
+            "格局用神數據": self.get_geju_yongshen_data(),
+            "通關數據": self.get_tongguan_data(),
+            "日主強弱數據": self.get_rizhu_strength_data(),
+            "五行生剋參考": self.get_wuxing_relations(),
+            "六標籤制說明": self.get_labels_description(),
         }
 
 
@@ -462,7 +469,7 @@ def main():
     import argparse
     import json
 
-    parser = argparse.ArgumentParser(description="用神引擎 CLI")
+    parser = argparse.ArgumentParser(description="用神數據引擎 CLI")
     parser.add_argument("--year", type=str, required=True, help="年柱干支")
     parser.add_argument("--month", type=str, required=True, help="月柱干支")
     parser.add_argument("--day", type=str, required=True, help="日柱干支")
